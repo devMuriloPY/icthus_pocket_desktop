@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Logs e cache
+*.log
+*.sqlite3
+*.db
+*.bak
+*.tmp
+*.cache
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configs pessoais
+config.json

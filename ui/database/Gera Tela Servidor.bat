@@ -1,0 +1,1 @@
+pyside6-uic servidor.ui -o ui_servidor.py
