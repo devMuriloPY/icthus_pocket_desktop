@@ -5,24 +5,24 @@
   <property name="windowModality">
    <enum>Qt::WindowModality::ApplicationModal</enum>
   </property>
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>300</width>
-    <height>500</height>
-   </rect>
-  </property>
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>300</width>
+     <height>650</height>
+    </rect>
+   </property>
   <property name="minimumSize">
    <size>
     <width>300</width>
-    <height>500</height>
+    <height>650</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>300</width>
-    <height>500</height>
+    <height>650</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -274,6 +274,75 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QLabel" name="lbImpressora">
+        <property name="text">
+         <string>Impressora</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cbImpressora">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbColunas">
+        <property name="text">
+         <string>Colunas</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="leColunas">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbUsuarioWindows">
+        <property name="text">
+         <string>Usuário Windows para Inicialização Automática</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cbUsuarioWindows">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
+         </size>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -379,15 +448,16 @@
    </item>
   </layout>
  </widget>
- <tabstops>
-  <tabstop>leServer</tabstop>
-  <tabstop>leUser</tabstop>
-  <tabstop>lePassword</tabstop>
-  <tabstop>cbDatabase</tabstop>
-  <tabstop>btnLoadDatabases</tabstop>
-  <tabstop>btnCancel</tabstop>
-  <tabstop>btnSave</tabstop>
- </tabstops>
+  <tabstops>
+   <tabstop>leServer</tabstop>
+   <tabstop>leUser</tabstop>
+   <tabstop>lePassword</tabstop>
+   <tabstop>cbDatabase</tabstop>
+   <tabstop>btnLoadDatabases</tabstop>
+   <tabstop>cbUsuarioWindows</tabstop>
+   <tabstop>btnCancel</tabstop>
+   <tabstop>btnSave</tabstop>
+  </tabstops>
  <resources/>
  <connections/>
 </ui>

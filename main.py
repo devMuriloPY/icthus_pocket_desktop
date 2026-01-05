@@ -1,32 +1,54 @@
 import sys
 import os
 import msvcrt
-import tempfile
+import atexit
 
 from PySide6.QtWidgets import (
     QApplication, QSystemTrayIcon, QMenu, QMessageBox
 )
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QAction
 from PySide6.QtCore import QTimer
 
 from ui.menu.menu_logica import MenuPrincipal
-from utils.websocket_server import iniciar_websocket_em_thread
 from utils.imagem import carregar_icon
-from utils.config import criar_settings  # ✅ Novo sistema de configuração
+from utils.websocket_server import iniciar_websocket_em_thread
+from utils.config import criar_settings
+from utils.usuarios_windows import obter_usuario_atual
 
-# Caminho para o arquivo de lock global
-LOCK_FILE_PATH = os.path.join(tempfile.gettempdir(), "icthus-pocket-global.lock")
+# Caminho para o arquivo de lock por usuário
+# Usa %LOCALAPPDATA% que sempre tem permissão de escrita e é específico por usuário
+# Permite múltiplos usuários no servidor, cada um com sua própria instância
+def obter_caminho_lock():
+    """Retorna o caminho do arquivo de lock para o usuário atual."""
+    local_appdata = os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))
+    lock_dir = os.path.join(local_appdata, "ICThUS Pocket")
+    os.makedirs(lock_dir, exist_ok=True)  # Garante que o diretório existe
+    username = os.environ.get("USERNAME", "unknown")
+    return os.path.join(lock_dir, f"icthus-pocket-{username}.lock")
+
+LOCK_FILE_PATH = obter_caminho_lock()
 LOCK_FILE = None
 
 
-def checar_instancia_global():
-    """Impede múltiplas instâncias do app na mesma máquina (mesmo entre usuários)."""
-    global LOCK_FILE
+def checar_instancia_usuario():
+    """Impede múltiplas instâncias do app para o mesmo usuário."""
+    global LOCK_FILE, LOCK_FILE_PATH
     try:
+        # Atualiza o caminho caso tenha mudado
+        LOCK_FILE_PATH = obter_caminho_lock()
+        
+        # Tenta abrir e travar o arquivo
         LOCK_FILE = open(LOCK_FILE_PATH, "w")
         msvcrt.locking(LOCK_FILE.fileno(), msvcrt.LK_NBLCK, 1)
+        
+        # Escreve informações sobre a instância em execução
+        LOCK_FILE.write(f"PID: {os.getpid()}\nUsuário: {os.environ.get('USERNAME', 'Desconhecido')}\n")
+        LOCK_FILE.flush()
+        
         return True
-    except OSError:
+    except (OSError, IOError, PermissionError) as e:
+        # Arquivo já está travado por outra instância do mesmo usuário
+        print(f"Aviso: Não foi possível criar lock: {e}")
         return False
 
 
@@ -37,8 +59,11 @@ def liberar_lock():
         try:
             msvcrt.locking(LOCK_FILE.fileno(), msvcrt.LK_UNLCK, 1)
             LOCK_FILE.close()
-        except:
-            pass
+            # Remove o arquivo de lock
+            if os.path.exists(LOCK_FILE_PATH):
+                os.remove(LOCK_FILE_PATH)
+        except Exception as e:
+            print(f"Aviso ao liberar lock: {e}")
 
 
 class AppTray:
@@ -78,10 +103,61 @@ class AppTray:
         self.app.quit()
 
 
+def verificar_usuario_permitido():
+    """Verifica se o usuário atual do Windows está autorizado a iniciar o app."""
+    try:
+        settings = criar_settings()
+        usuario_configurado = settings.value("usuario_windows", "")
+        
+        # Se não houver usuário configurado, permite qualquer usuário (comportamento antigo)
+        if not usuario_configurado or usuario_configurado.strip() == "":
+            return True
+        
+        usuario_atual = obter_usuario_atual()
+        
+        # Verifica se o usuário atual corresponde ao configurado
+        if usuario_atual.lower() == usuario_configurado.lower():
+            return True
+        
+        # Usuário não autorizado
+        return False
+    except Exception as e:
+        print(f"⚠️ Erro ao verificar usuário permitido: {e}")
+        # Em caso de erro, permite o acesso (comportamento seguro)
+        return True
+
+
 def main():
-    if not checar_instancia_global():
-        QMessageBox.warning(None, "Já em execução", "O aplicativo já está rodando.")
+    # Verifica se o usuário atual está autorizado a iniciar o app
+    if not verificar_usuario_permitido():
+        app_temp = QApplication(sys.argv) if not QApplication.instance() else QApplication.instance()
+        usuario_atual = obter_usuario_atual()
+        settings = criar_settings()
+        usuario_configurado = settings.value("usuario_windows", "")
+        
+        QMessageBox.warning(
+            None, 
+            "Acesso Negado", 
+            f"O ICThUS Pocket Sync está configurado para iniciar apenas com o usuário '{usuario_configurado}'.\n\n"
+            f"Usuário atual: '{usuario_atual}'\n\n"
+            "Para alterar esta configuração, acesse as Configurações do aplicativo."
+        )
         sys.exit(0)
+    
+    if not checar_instancia_usuario():
+        app_temp = QApplication(sys.argv) if not QApplication.instance() else QApplication.instance()
+        username = os.environ.get("USERNAME", "usuário")
+        QMessageBox.warning(
+            None, 
+            "Aplicativo já em execução", 
+            f"O ICThUS Pocket Sync já está rodando para o usuário '{username}'.\n\n"
+            "Apenas uma instância do aplicativo pode ser executada por usuário.\n"
+            "Cada usuário no servidor pode ter sua própria instância."
+        )
+        sys.exit(0)
+    
+    # Registra a liberação do lock ao sair do programa (mesmo em crashes)
+    atexit.register(liberar_lock)
 
     app = QApplication(sys.argv)
     janela = MenuPrincipal()
@@ -115,15 +191,8 @@ def main():
 
     janela.show()
 
-    # ✅ Iniciar WebSocket com a porta definida no config.json
-    settings = criar_settings()
-    porta_configurada = settings.value("porta", 5757)
-    try:
-        porta_configurada = int(porta_configurada)
-    except (ValueError, TypeError):
-        porta_configurada = 5757
-
-    iniciar_websocket_em_thread(porta_configurada)
+    # Inicia o WebSocket diretamente no app desktop
+    iniciar_websocket_em_thread()
 
     sys.exit(app.exec())
 

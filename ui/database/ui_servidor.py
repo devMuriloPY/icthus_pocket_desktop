@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'servidor.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.9.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,9 +24,9 @@ class Ui_Server(object):
         if not Server.objectName():
             Server.setObjectName(u"Server")
         Server.setWindowModality(Qt.WindowModality.ApplicationModal)
-        Server.resize(300, 500)
-        Server.setMinimumSize(QSize(300, 500))
-        Server.setMaximumSize(QSize(300, 500))
+        Server.resize(300, 650)
+        Server.setMinimumSize(QSize(300, 650))
+        Server.setMaximumSize(QSize(300, 650))
         icon = QIcon()
         icon.addFile(u"../../../assets/database.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         Server.setWindowIcon(icon)
@@ -145,6 +145,42 @@ class Ui_Server(object):
 
         self.verticalLayout_2.addWidget(self.lineEdit_2)
 
+        self.lbImpressora = QLabel(self.gbServer)
+        self.lbImpressora.setObjectName(u"lbImpressora")
+
+        self.verticalLayout_2.addWidget(self.lbImpressora)
+
+        self.cbImpressora = QComboBox(self.gbServer)
+        self.cbImpressora.setObjectName(u"cbImpressora")
+        self.cbImpressora.setMinimumSize(QSize(0, 30))
+        self.cbImpressora.setMaximumSize(QSize(16777215, 30))
+
+        self.verticalLayout_2.addWidget(self.cbImpressora)
+
+        self.lbColunas = QLabel(self.gbServer)
+        self.lbColunas.setObjectName(u"lbColunas")
+
+        self.verticalLayout_2.addWidget(self.lbColunas)
+
+        self.leColunas = QLineEdit(self.gbServer)
+        self.leColunas.setObjectName(u"leColunas")
+        self.leColunas.setMinimumSize(QSize(0, 30))
+        self.leColunas.setMaximumSize(QSize(16777215, 30))
+
+        self.verticalLayout_2.addWidget(self.leColunas)
+
+        self.lbUsuarioWindows = QLabel(self.gbServer)
+        self.lbUsuarioWindows.setObjectName(u"lbUsuarioWindows")
+
+        self.verticalLayout_2.addWidget(self.lbUsuarioWindows)
+
+        self.cbUsuarioWindows = QComboBox(self.gbServer)
+        self.cbUsuarioWindows.setObjectName(u"cbUsuarioWindows")
+        self.cbUsuarioWindows.setMinimumSize(QSize(0, 30))
+        self.cbUsuarioWindows.setMaximumSize(QSize(16777215, 30))
+
+        self.verticalLayout_2.addWidget(self.cbUsuarioWindows)
+
 
         self.verticalLayout_3.addWidget(self.gbServer)
 
@@ -193,7 +229,8 @@ class Ui_Server(object):
         QWidget.setTabOrder(self.leUser, self.lePassword)
         QWidget.setTabOrder(self.lePassword, self.cbDatabase)
         QWidget.setTabOrder(self.cbDatabase, self.btnLoadDatabases)
-        QWidget.setTabOrder(self.btnLoadDatabases, self.btnCancel)
+        QWidget.setTabOrder(self.btnLoadDatabases, self.cbUsuarioWindows)
+        QWidget.setTabOrder(self.cbUsuarioWindows, self.btnCancel)
         QWidget.setTabOrder(self.btnCancel, self.btnSave)
 
         self.retranslateUi(Server)
@@ -214,6 +251,9 @@ class Ui_Server(object):
         self.btnLoadDatabases.setText("")
         self.label.setText(QCoreApplication.translate("Server", u"Porta Servidor (Padr\u00e3o 5757)", None))
         self.label_2.setText(QCoreApplication.translate("Server", u"IP Servidor", None))
+        self.lbImpressora.setText(QCoreApplication.translate("Server", u"Impressora", None))
+        self.lbColunas.setText(QCoreApplication.translate("Server", u"Colunas", None))
+        self.lbUsuarioWindows.setText(QCoreApplication.translate("Server", u"Usu\u00e1rio Windows para Inicializa\u00e7\u00e3o Autom\u00e1tica", None))
 #if QT_CONFIG(tooltip)
         self.btnCancel.setToolTip(QCoreApplication.translate("Server", u"Fechar", None))
 #endif // QT_CONFIG(tooltip)

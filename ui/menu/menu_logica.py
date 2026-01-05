@@ -1,5 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QApplication
-import sys
+from PySide6.QtWidgets import QMainWindow
 
 from ui.menu.ui_menu import Ui_Menu
 from ui.database.logica_servidor import TelaServidor
@@ -17,6 +16,10 @@ class MenuPrincipal(QMainWindow):
         self.ui.actionExit.triggered.connect(self.close)
         self.ui.actionDatabase.setIcon(carregar_icon("database.png"))
         self.ui.actionExit.setIcon(carregar_icon("exit.png"))
+        
+        # Remove a ação de serviço do menu (não é mais necessário)
+        if hasattr(self.ui, 'actionService'):
+            self.ui.actionService.setVisible(False)
 
     def abrir_configuracao_banco(self):
         self.tela_config = TelaServidor()

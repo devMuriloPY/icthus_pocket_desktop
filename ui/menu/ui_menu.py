@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'menu.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.1
+## Created by: Qt User Interface Compiler version 6.9.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -43,6 +43,8 @@ class Ui_Menu(object):
         self.actionCadastro_de_Protudos.setObjectName(u"actionCadastro_de_Protudos")
         self.actionProdutos_Vinculados = QAction(Menu)
         self.actionProdutos_Vinculados.setObjectName(u"actionProdutos_Vinculados")
+        self.actionService = QAction(Menu)
+        self.actionService.setObjectName(u"actionService")
         self.centralwidget = QWidget(Menu)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
@@ -113,6 +115,7 @@ class Ui_Menu(object):
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionExit)
         self.menuSettings.addAction(self.actionDatabase)
+        self.menuSettings.addAction(self.actionService)
 
         self.retranslateUi(Menu)
 
@@ -126,6 +129,7 @@ class Ui_Menu(object):
         self.actionDatabase.setText(QCoreApplication.translate("Menu", u"Banco de dados", None))
         self.actionCadastro_de_Protudos.setText(QCoreApplication.translate("Menu", u"Vincular Produtos", None))
         self.actionProdutos_Vinculados.setText(QCoreApplication.translate("Menu", u"Produtos Vinculados", None))
+        self.actionService.setText(QCoreApplication.translate("Menu", u"Servi\u00e7o WebSocket", None))
         self.label.setText("")
         self.lbVersion.setText(QCoreApplication.translate("Menu", u"Vers\u00e3o: 2025.07.23", None))
         self.menuHelp.setTitle(QCoreApplication.translate("Menu", u"Ajuda", None))
