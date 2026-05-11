@@ -15,7 +15,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGroupBox,
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
@@ -24,9 +24,9 @@ class Ui_Server(object):
         if not Server.objectName():
             Server.setObjectName(u"Server")
         Server.setWindowModality(Qt.WindowModality.ApplicationModal)
-        Server.resize(300, 650)
-        Server.setMinimumSize(QSize(300, 650))
-        Server.setMaximumSize(QSize(300, 650))
+        Server.resize(300, 685)
+        Server.setMinimumSize(QSize(300, 685))
+        Server.setMaximumSize(QSize(300, 685))
         icon = QIcon()
         icon.addFile(u"../../../assets/database.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         Server.setWindowIcon(icon)
@@ -157,6 +157,11 @@ class Ui_Server(object):
 
         self.verticalLayout_2.addWidget(self.cbImpressora)
 
+        self.chkLinhaSeparadaMesmoItem = QCheckBox(self.gbServer)
+        self.chkLinhaSeparadaMesmoItem.setObjectName(u"chkLinhaSeparadaMesmoItem")
+
+        self.verticalLayout_2.addWidget(self.chkLinhaSeparadaMesmoItem)
+
         self.lbColunas = QLabel(self.gbServer)
         self.lbColunas.setObjectName(u"lbColunas")
 
@@ -252,6 +257,7 @@ class Ui_Server(object):
         self.label.setText(QCoreApplication.translate("Server", u"Porta Servidor (Padr\u00e3o 5757)", None))
         self.label_2.setText(QCoreApplication.translate("Server", u"IP Servidor", None))
         self.lbImpressora.setText(QCoreApplication.translate("Server", u"Impressora", None))
+        self.chkLinhaSeparadaMesmoItem.setText(QCoreApplication.translate("Server", u"Linha separada para mesmo item", None))
         self.lbColunas.setText(QCoreApplication.translate("Server", u"Colunas", None))
         self.lbUsuarioWindows.setText(QCoreApplication.translate("Server", u"Usu\u00e1rio Windows para Inicializa\u00e7\u00e3o Autom\u00e1tica", None))
 #if QT_CONFIG(tooltip)

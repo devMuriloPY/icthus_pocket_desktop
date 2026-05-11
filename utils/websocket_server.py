@@ -2,7 +2,8 @@ import asyncio
 import websockets
 import json
 import threading
-from datetime import datetime
+import hashlib
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from utils.sqlserver import conexao_ativa
@@ -17,6 +18,43 @@ def obter_porta_websocket(padrao=5757):
         return int(porta_str)
     except (ValueError, TypeError):
         return padrao
+
+
+def obter_linha_separada_mesmo_item():
+    """Mesma preferência da checkbox na tela de servidor (config JSON)."""
+    settings = criar_settings()
+    v = settings.value("linha_separada_mesmo_item", False)
+    if isinstance(v, str):
+        return v.lower() in ("true", "1", "yes")
+    return bool(v)
+
+
+def expandir_itens_linha_separada(itens):
+    """
+    Com a opção ativa, cada item com Quantidade > 1 inteira vira N linhas:
+    Quantidade 1, mesmo ValorUnitario, ValorTotal = ValorUnitario (por linha).
+    Quantidades fracionárias não são divididas (mantém 1 linha).
+    """
+    if not itens or not obter_linha_separada_mesmo_item():
+        return itens
+    resultado = []
+    for item in itens:
+        qtd = float(item.get("Quantidade", 0))
+        if qtd <= 1:
+            resultado.append(item)
+            continue
+        n = int(round(qtd))
+        if abs(qtd - n) > 1e-6:
+            resultado.append(item)
+            continue
+        vu = float(item["ValorUnitario"])
+        for _ in range(n):
+            linha = dict(item)
+            linha["Quantidade"] = 1
+            linha["ValorUnitario"] = vu
+            linha["ValorTotal"] = vu
+            resultado.append(linha)
+    return resultado
 
 async def processar_conexao(websocket):
     """Processa os comandos recebidos via WebSocket."""
@@ -196,6 +234,41 @@ async def enviar_lista_cidades(websocket):
     except Exception as e:
         await websocket.send(json.dumps({"erro": str(e)}))
 
+def gerar_hash_pedido(pedido, itens):
+    """Gera um hash único do pedido baseado nos dados principais para detectar duplicações.
+    
+    O hash é baseado em:
+    - Código do vendedor
+    - Código do cliente
+    - Lista de itens (código, quantidade, valor unitário)
+    - Valor total
+    - Responsável (se houver)
+    - Forma de pagamento mobile (se houver)
+    """
+    # Ordena os itens para garantir consistência
+    itens_ordenados = sorted(itens, key=lambda x: (
+        str(x.get("CodItem", "")),
+        float(x.get("Quantidade", 0)),
+        float(x.get("ValorUnitario", 0))
+    ))
+    
+    # Monta uma string com os dados principais do pedido
+    dados_hash = []
+    dados_hash.append(f"vendedor:{pedido.get('CodVendedor', '')}")
+    dados_hash.append(f"cliente:{pedido.get('CodCliente', '')}")
+    dados_hash.append(f"total:{pedido.get('ValorTotal', 0)}")
+    dados_hash.append(f"responsavel:{pedido.get('Responsavel', '')}")
+    dados_hash.append(f"forma_pagamento:{pedido.get('FormaPagamento', '')}")
+    
+    # Adiciona os itens ordenados
+    for item in itens_ordenados:
+        dados_hash.append(f"item:{item.get('CodItem', '')}:qtd:{item.get('Quantidade', 0)}:valor:{item.get('ValorUnitario', 0)}")
+    
+    # Gera o hash MD5
+    string_hash = "|".join(dados_hash)
+    hash_obj = hashlib.md5(string_hash.encode('utf-8'))
+    return hash_obj.hexdigest()
+
 async def processar_pedido(websocket, dados):
     """Recebe um pedido com seus itens e insere no banco."""
     try:
@@ -220,15 +293,97 @@ async def processar_pedido(websocket, dados):
                     "erro": f"Campo obrigatório ausente: {campo}"
                 }))
                 return
+
+        itens = expandir_itens_linha_separada(itens)
         
         conn = conexao_ativa()
         cursor = conn.cursor()
         
         try:
+            # Inicia transação com isolamento SERIALIZABLE para evitar race conditions
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+            cursor.execute("BEGIN TRANSACTION")
+            
             # Verifica se o cliente foi informado, senão busca o cliente padrão
             if not pedido.get("CodCliente") or pedido.get("CodCliente") in [None, "", "null"]:
                 cliente_padrao = obter_cliente_padrao(cursor)
                 pedido["CodCliente"] = cliente_padrao
+            
+            # Verifica se já existe um pedido duplicado recente (últimos 10 minutos)
+            # Usa UPDLOCK e HOLDLOCK para garantir que apenas uma thread processe por vez
+            # Isso evita race conditions quando dois pedidos chegam simultaneamente
+            data_limite = datetime.now() - timedelta(minutes=10)
+            
+            # Primeiro, tenta encontrar pedidos com mesmo vendedor, cliente e valor total
+            # O lock garante que apenas uma requisição processe por vez
+            cursor.execute("""
+                SELECT TOP 1 P.[Código Pedido]
+                FROM Pedidos P WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
+                WHERE P.[Origem Venda] = '3 - Mobile'
+                  AND P.[Data Cadastro] >= ?
+                  AND P.[Código Vendedor] = ?
+                  AND P.[Código Cliente] = ?
+                  AND ABS(P.[Valor Total] - ?) < 0.01
+                  AND P.Fechado = 0
+                  AND P.Entregue = 0
+                  AND P.Parcelado = 0
+                ORDER BY P.[Data Cadastro] DESC, P.[Código Pedido] DESC
+            """, data_limite, pedido["CodVendedor"], pedido["CodCliente"], float(pedido["ValorTotal"]))
+            
+            pedido_duplicado = cursor.fetchone()
+            
+            # Log para debug
+            if pedido_duplicado:
+                print(f"🔍 Verificando possível duplicação: pedido {pedido_duplicado[0]} encontrado")
+            else:
+                print(f"✅ Nenhum pedido duplicado encontrado para vendedor {pedido['CodVendedor']}, cliente {pedido['CodCliente']}, valor {pedido['ValorTotal']}")
+            
+            if pedido_duplicado:
+                cod_pedido_existente = pedido_duplicado[0]
+                
+                # Verifica se os itens também são iguais (comparação detalhada)
+                cursor.execute("""
+                    SELECT [Código Item], CAST(Quantidade AS FLOAT) as Quantidade, 
+                           CAST([Valor Unitário] AS FLOAT) as ValorUnitario,
+                           CAST([Valor Total] AS FLOAT) as ValorTotal
+                    FROM [Pedidos Itens]
+                    WHERE [Código Pedido] = ?
+                    ORDER BY [Código Item], Quantidade, [Valor Unitário]
+                """, cod_pedido_existente)
+                
+                itens_existentes = cursor.fetchall()
+                
+                # Ordena os itens do pedido atual para comparação
+                itens_atual_ordenados = sorted(
+                    [(item.get("CodItem"), float(item.get("Quantidade", 0)), 
+                      float(item.get("ValorUnitario", 0)), float(item.get("ValorTotal", 0))) 
+                     for item in itens],
+                    key=lambda x: (x[0], x[1], x[2])
+                )
+                
+                # Compara quantidade de itens
+                if len(itens_existentes) == len(itens_atual_ordenados):
+                    # Compara cada item
+                    itens_iguais = True
+                    for i, item_existente in enumerate(itens_existentes):
+                        item_atual = itens_atual_ordenados[i]
+                        if (item_existente[0] != item_atual[0] or  # Código do item
+                            abs(item_existente[1] - item_atual[1]) >= 0.01 or  # Quantidade
+                            abs(item_existente[2] - item_atual[2]) >= 0.01):  # Valor unitário
+                            itens_iguais = False
+                            break
+                    
+                    if itens_iguais:
+                        # Pedido duplicado encontrado - retorna o pedido existente
+                        cursor.execute("COMMIT TRANSACTION")
+                        await websocket.send(json.dumps({
+                            "sucesso": True,
+                            "mensagem": f"Pedido duplicado detectado. Retornando pedido existente {cod_pedido_existente}",
+                            "cod_pedido": cod_pedido_existente,
+                            "total_itens": len(itens_existentes),
+                            "duplicado": True
+                        }))
+                        return
             
             # Gera o próximo código de pedido
             cod_pedido = gerar_proximo_codigo_pedido(cursor)
@@ -242,6 +397,7 @@ async def processar_pedido(websocket, dados):
             for item in itens:
                 inserir_item_pedido(cursor, pedido["CodPedido"], item, pedido["CodVendedor"])
             
+            cursor.execute("COMMIT TRANSACTION")
             conn.commit()
             
             await websocket.send(json.dumps({
@@ -253,6 +409,10 @@ async def processar_pedido(websocket, dados):
             
             
         except Exception as e:
+            try:
+                cursor.execute("ROLLBACK TRANSACTION")
+            except:
+                pass
             conn.rollback()
             raise e
         finally:
@@ -582,6 +742,8 @@ async def inserir_item_pedido_existente(websocket, dados):
                     "erro": f"Campo obrigatório ausente no item: {campo}"
                 }))
                 return
+
+        itens_inserir = expandir_itens_linha_separada([item])
         
         conn = conexao_ativa()
         cursor = conn.cursor()
@@ -604,8 +766,8 @@ async def inserir_item_pedido_existente(websocket, dados):
             
             cod_vendedor = row[1]
             
-            # Insere o item no pedido
-            inserir_item_pedido(cursor, cod_pedido, item, cod_vendedor)
+            for linha in itens_inserir:
+                inserir_item_pedido(cursor, cod_pedido, linha, cod_vendedor)
             
             # Atualiza os totais do pedido
             totais = atualizar_totais_pedido(cursor, cod_pedido)
@@ -616,6 +778,7 @@ async def inserir_item_pedido_existente(websocket, dados):
                 "sucesso": True,
                 "mensagem": f"Item inserido no pedido {cod_pedido} com sucesso",
                 "cod_pedido": cod_pedido,
+                "linhas_inseridas": len(itens_inserir),
                 "totais_atualizados": {
                     "ValorTotal": float(totais["ValorTotal"]),
                     "ValorProdutos": float(totais["ValorProdutos"]),

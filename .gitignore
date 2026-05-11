@@ -33,3 +33,5 @@ desktop.ini
 
 # Configs pessoais
 config.json
+instalador/output/
+instalador/script_iss.iss

@@ -10,19 +10,19 @@
      <x>0</x>
      <y>0</y>
      <width>300</width>
-     <height>650</height>
+     <height>685</height>
     </rect>
    </property>
   <property name="minimumSize">
    <size>
     <width>300</width>
-    <height>650</height>
+    <height>685</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>300</width>
-    <height>650</height>
+    <height>685</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -294,6 +294,13 @@
           <width>16777215</width>
           <height>30</height>
          </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkLinhaSeparadaMesmoItem">
+        <property name="text">
+         <string>Linha separada para mesmo item</string>
         </property>
        </widget>
       </item>

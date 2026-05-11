@@ -25,7 +25,7 @@ def conexao_ativa():
     """Retorna uma conexão ativa com o banco de dados usando os dados do config.json."""
     settings = criar_settings()
 
-    servidor = settings.value("servidor", "localhost")
+    servidor = settings.value("servidor", "")
     usuario = settings.value("usuario", "sa")
     senha_cripto = settings.value("senha", "")
     banco = settings.value("banco", "")

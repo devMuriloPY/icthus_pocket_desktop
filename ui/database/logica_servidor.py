@@ -92,6 +92,11 @@ class TelaServidor(QWidget):
             if index >= 0:
                 self.ui.cbImpressora.setCurrentIndex(index)
         
+        linha_sep = self.settings.value("linha_separada_mesmo_item", False)
+        if isinstance(linha_sep, str):
+            linha_sep = linha_sep.lower() in ("true", "1", "yes")
+        self.ui.chkLinhaSeparadaMesmoItem.setChecked(bool(linha_sep))
+
         # Carrega colunas da impressora (padrão: 42 para papel 80mm)
         colunas = self.settings.value("colunas_impressora", "42")
         self.ui.leColunas.setText(str(colunas))
@@ -122,6 +127,7 @@ class TelaServidor(QWidget):
         banco = self.ui.cbDatabase.currentText().strip()
         impressora = self.ui.cbImpressora.currentText().strip()
         colunas = self.ui.leColunas.text().strip()
+        linha_separada_mesmo_item = self.ui.chkLinhaSeparadaMesmoItem.isChecked()
         usuario_windows = self.ui.cbUsuarioWindows.currentText().strip()
 
         # Valida colunas (deve ser número entre 20 e 80)
@@ -145,6 +151,7 @@ class TelaServidor(QWidget):
         self.settings.setValue("banco", banco)
         self.settings.setValue("impressora", impressora)
         self.settings.setValue("colunas_impressora", colunas)
+        self.settings.setValue("linha_separada_mesmo_item", linha_separada_mesmo_item)
         self.settings.setValue("usuario_windows", usuario_windows)
 
         self.configuracao_salva.emit({
@@ -156,6 +163,7 @@ class TelaServidor(QWidget):
             "porta": porta,
             "impressora": impressora,
             "colunas_impressora": colunas,
+            "linha_separada_mesmo_item": linha_separada_mesmo_item,
             "usuario_windows": usuario_windows
         })
 

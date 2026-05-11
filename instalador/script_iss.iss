@@ -7,7 +7,7 @@ DefaultDirName={commonpf}\ICThUS Pocket Sync
 DefaultGroupName=ICThUS Pocket Sync
 OutputDir=output
 OutputBaseFilename=ICThUS Pocket - Instalador
-SetupIconFile=C:\icthus_pocket\pocket_desktop\instalador\setup.ico
+SetupIconFile=C:\Projetos\WM\Python\icthus_pocket_desktop\instalador\setup.ico
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=admin
@@ -15,7 +15,7 @@ AllowNoIcons=yes
 
 [Files]
 ; Copia todos os arquivos da pasta "dist\ICThUS Pocket Sync"
-Source: "C:\icthus_pocket\pocket_desktop\dist\ICThUS Pocket Sync\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Projetos\WM\Python\icthus_pocket_desktop\dist\ICThUS Pocket Sync\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\ICThUS Pocket Sync"; Filename: "{app}\ICThUS Pocket Sync.exe"

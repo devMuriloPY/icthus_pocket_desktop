@@ -51,7 +51,6 @@ def checar_instancia_usuario():
         print(f"Aviso: Não foi possível criar lock: {e}")
         return False
 
-
 def liberar_lock():
     """Libera o arquivo de lock ao encerrar o app."""
     global LOCK_FILE
